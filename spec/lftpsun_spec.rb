@@ -6,6 +6,7 @@ describe Lftpsun do
   end
 
   it 'raises if no config' do
+    Lftpsun.config = nil
     expect {
       Lftpsun.config
     }.to raise_error(Lftpsun::NoConfigFound)

@@ -2,15 +2,11 @@ module Lftpsun
   class Worker
     def initialize(event)
       @event = event
-      @job_params = event.job_params
-    end
-
-    def do_work
-      LFTP.new(
+      @lftp = LFTP.new(
         source: @event.src_path,
         destination: @event.dest_path,
         host: @event.host
-      ).run
+      )
     end
 
     def work
@@ -18,6 +14,12 @@ module Lftpsun
       do_work
     ensure
       @event.finish
+    end
+
+    private
+
+    def do_work
+      @lftp.run
     end
   end
 end

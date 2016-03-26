@@ -19,7 +19,7 @@ module Lftpsun
       @port = port
       @remove_src = clear_src_dir
       @logging = log
-      @debug = DEBUG
+      @debug = Lftpsun.debug?
       @command = build_lftp_command
 
       raise ArgumentError, "Insufficient arguments to build an lftp command" unless @host && @source && @destination
@@ -63,13 +63,13 @@ module Lftpsun
     end
 
     def spawn_command
+      require 'byebug'
+      byebug
       cmd, doc = build_lftp_command
       PTY.spawn(cmd) do |reader, writer, pid|
         begin
           writer.puts doc
           reader.sync = true
-          puts "HK-DEBUG"
-          puts reader.class
           reader.each do |line|
             progress = parse_line(line)
             if progress
@@ -87,11 +87,9 @@ module Lftpsun
     end
 
     def run
-      begin
-        spawn_command
-      rescue PTY::ChildExited => e
-        raise LFTPSync::SyncError, "lftp process exited unexpectedly"
-      end
+      spawn_command
+    rescue PTY::ChildExited => e
+      raise LFTPSync::SyncError, "lftp process exited unexpectedly"
     end
 
     def parallelization_factor

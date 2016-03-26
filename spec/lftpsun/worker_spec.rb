@@ -18,11 +18,19 @@ module Lftpsun
         host: @event.host
       )
 
-      Woker.new(@event).work
+      Worker.new(@event)
     end
 
-    it 'marks the start and end of event' do
+    it 'calls lftp.run to work' do
+      LFTP.any_instance.expects(:run)
+      Worker.new(@event).work
+    end
 
+    it 'sets start and finish timestamps' do
+      LFTP.any_instance.stubs(:run)
+      SyncEvent.any_instance.expects(:start)
+      SyncEvent.any_instance.expects(:finish)
+      Worker.new(@event).work
     end
   end
 end
