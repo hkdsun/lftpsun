@@ -1,0 +1,14 @@
+debug_mode: false
+
+lftp:
+  parallel_factor: 5
+
+log_dir: '/var/log/lftpsun'
+
+client:
+  download_dir: '/Users/hkheradmand/Downloads/sms'
+
+default_clients:
+  - name: 'dev'
+    callback_url: 'http://localhost:4568'
+    callback_port: '80'

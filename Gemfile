@@ -1,4 +1,11 @@
-source 'https://rubygems.org'
+# A sample Gemfile
+source "https://rubygems.org"
 
-# Specify your gem's dependencies in lftpsun.gemspec
-gemspec
+gem "rspec"
+gem "rake"
+gem "faraday"
+gem "sinatra"
+gem "eventmachine"
+gem "thin"
+gem "pry"
+gem "mocha"

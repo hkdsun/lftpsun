@@ -5,7 +5,16 @@ describe Lftpsun do
     expect(Lftpsun::VERSION).not_to be nil
   end
 
-  it 'does something useful' do
-    expect(false).to eq(true)
+  it 'raises if no config' do
+    expect {
+      Lftpsun.config
+    }.to raise_error(Lftpsun::NoConfigFound)
+  end
+
+  it 'doesnt raise if theres config' do
+    Lftpsun.config = {}
+    expect {
+      Lftpsun.config
+    }.not_to raise_error
   end
 end
