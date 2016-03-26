@@ -5,9 +5,9 @@ module Lftpsun
     secret == APP_SECRET
   end
 
-  def verify_params(data, *params)
-    params.each do |param|
-      return false unless data[param.to_s]
+  def verify_params(params, allowed = [])
+    allowed.each do |key|
+      return false unless (params[key] || params[key.to_s])
     end
     true
   end
