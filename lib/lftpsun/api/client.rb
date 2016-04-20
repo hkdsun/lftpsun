@@ -18,9 +18,15 @@ module Lftpsun
       supervisor = Supervisor.new
 
       before do
+        pass if %w[progress].include? request.path_info.split('/')[1]
         payload = parse_json(request)
         halt 403 unless authorized?(payload['secret'])
         request.body.rewind
+      end
+
+      get '/progress' do
+        @loglines = File.readlines(Lftpsun::LFTP.progress_log_file)
+        erb :progress
       end
 
       post '/notify' do

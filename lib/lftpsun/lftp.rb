@@ -32,11 +32,18 @@ module Lftpsun
       raise LFTPSync::SyncError, "lftp process exited unexpectedly"
     end
 
+    def self.progress_log_file
+      File.expand_path("#{log_dir}/progress.log")
+    end
+
+    def self.log_dir
+      Lftpsun.config['lftp_log_dir']
+    end
+
     private
 
     def build_lftp_command
       stdin = <<-EOF
-        set cmd:interactive false
         set ftp:ssl-protect-data true
         set ftps:initial-prot
         set ftp:ssl-force true
@@ -45,7 +52,7 @@ module Lftpsun
         set net:max-retries 1
         set dns:max-retries 1
         set mirror:use-pget-n #{parallelization_factor}
-        mirror #{"--Remove-source-files" if @remove_src} -c -P#{parallelization_factor} #{"--log=#{log_dir}/syncmyshit_lftp.log" if logging?} #{@source.shellescape} #{@destination.shellescape}
+        mirror #{"--Remove-source-files" if @remove_src} -c -P#{parallelization_factor} #{"--log=#{LFTP.log_dir}/syncmyshit_lftp.log" if logging?} #{@source.shellescape} #{@destination.shellescape}
         quit
       EOF
       cmd = "lftp sftp://#{@host.shellescape} #{"-p #{@port}" if @port}"
@@ -70,22 +77,18 @@ module Lftpsun
     end
 
     def spawn_command
-      cmd, doc = build_lftp_command
-      PTY.spawn(cmd) do |reader, writer, pid|
+      run_cmd, lftp_cmd = build_lftp_command
+      PTY.spawn(run_cmd) do |reader, writer, pid|
         begin
-          writer.puts doc
-          reader.sync = true
+          log_to_file("[LFTP-SYNC] starting lftp on PID: #{pid} with arguments\n#{lftp_cmd}")
+          writer.puts lftp_cmd
           reader.each do |line|
-            progress = parse_line(line)
-            if progress
-              puts "[LFTP-SYNC] #{progress[:filename]} | #{progress[:speed]} | #{progress[:progress]} | ETA: #{progress[:eta]}"
-            else
-              puts "[LFTP-SYNC] #{line}"
-            end
+            log_to_file(line)
           end
         rescue Errno::EIO
-          puts "[LFTP-SYNC] no more output"
+          log_to_file("[LFTP-SYNC] no more output")
         ensure
+          log_to_file("[LFTP-SYNC] killing PID: #{pid}")
           Process.kill('KILL', pid)
         end
       end
@@ -95,8 +98,10 @@ module Lftpsun
       Lftpsun.config['lftp']['parallel_factor']
     end
 
-    def log_dir
-      Lftpsun.config['lftp_log_dir']
+    def log_to_file(line)
+      open(LFTP.progress_log_file, 'a') do |f|
+        f << line << "\n"
+      end
     end
 
     def logging?
