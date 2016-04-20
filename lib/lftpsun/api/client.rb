@@ -1,12 +1,11 @@
-require 'sinatra/base'
 require 'thin'
 require 'eventmachine'
+require 'lftpsun/api/base'
 
-require 'lftpsun/supervisor'
 
 module Lftpsun
   module Api
-    class ClientApp < Sinatra::Base
+    class ClientApp < Base
       unless APP_SECRET
         raise "No secret configured..aborting"
         exit 1
@@ -27,13 +26,14 @@ module Lftpsun
       post '/notify' do
         data = parse_json(request)
 
-        puts "Processing request:\n#{data}" if DEBUG
+        puts "Processing request:\n#{data}" if Lftpsun.debug?
         response = "Processing notification for "
-        VALID_CLIENT_PARAMS.each do |key|
+        ['label', 'path', 'name'].each do |key|
           response += "\n#{key}: #{data[key]}"
         end
-        puts response
-        supervisor.push(data)
+
+        event = SyncEvent.new(data['name'], data['path'], data['label'], data['host'])
+        supervisor.push(event)
       end
     end
   end

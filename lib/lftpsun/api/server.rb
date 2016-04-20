@@ -1,13 +1,10 @@
-require 'sinatra'
-require 'yaml'
-
-require 'lftpsun/client'
+require 'lftpsun/api/base'
 
 module Lftpsun
   module Api
-    class ServerApp < Sinatra::Base
+    class ServerApp < Base
       unless APP_SECRET
-        raise "No secret configured..aborting"
+        raise "No secret configured (LFTPSUN_SECRET)..aborting"
         exit 1
       end
 
@@ -25,11 +22,12 @@ module Lftpsun
 
       post '/subscribe' do
         params = parse_json(request)
-        halt 400, "Wrong arguments include name, callback_url, callback_port" unless verify_params(params, :name, :callback_url, :callback_port)
+        msg = "Wrong arguments include name, url, port"
+        halt 400, msg unless verify_params(params, :name, :url, :port)
 
         name = params['name']
-        callback_url = params['callback_url']
-        callback_port = params['callback_port']
+        callback_url = params['url']
+        callback_port = params['port']
 
         SUBSCRIBED_CLIENTS << Lftpsun::Client.new(name, callback_url, callback_port)
         "Subscription successfull for client #{name}"
@@ -37,12 +35,11 @@ module Lftpsun
 
       post '/publish' do
         params = parse_json(request)
-        halt 400, "Wrong arguments. Include #{VALID_CLIENT_PARAMS.join(', ')}" unless verify_params(params, *VALID_CLIENT_PARAMS)
+        halt 400, "Wrong arguments. Include #{['label', 'path', 'name'].join(', ')}" unless verify_params(params, 'label', 'path', 'name')
 
-        label = params['label']
-        path = params['path']
-
+        data = { label: params['label'], path: params['path'], name: params['name'], host: Lftpsun.config['server']['hostname'] }
         response = "Sending messages to clients:\n"
+
         SUBSCRIBED_CLIENTS.each do |client|
           if client.send_notification(data)
             response += "[SUCCESS] client #{client.name}\n"

@@ -6,39 +6,33 @@ module Lftpsun
       @queue = []
     end
 
-    def push(params)
-      event = SyncEvent.new(params)
-
-      callback = Proc.new do |exception|
-        if exception
-          puts "Acting on a failure resulted from:\nMessage: #{exception}"
-          puts "Backtrace: #{exception.backtrace.join("\n")}" if DEBUG
-        end
-
-        puts "Popping #{event} off the queue"
-        @queue.delete(event)
-      end
-
+    def push(event)
       @queue.push(event)
-
       EM.defer do
-        with_fallback(callback, process(event))
+        with_fallback do
+          process(event)
+        end
       end
     end
+
+    private
 
     def process(event)
-      return Proc.new do
-        worker = Worker.new(event)
-        worker.work
-      end
+      event.start
+      lftp = LFTP.new(source: event.src_path, destination: event.dest_path, host: event.host)
+      lftp.run
+    ensure
+      event.finish
+      puts "Popping #{event} off the queue"
+      @queue.delete(event)
     end
 
-    def with_fallback(callback, work_proc)
+    def with_fallback
       begin
-        work_proc.call
-        callback.call(nil)
+        yield
       rescue StandardError => e
-        callback.call(e)
+        puts "Acting on a failure resulted from:\nMessage: #{e}"
+        puts "Backtrace: #{e.backtrace.join("\n")}" if Lftpsun.debug?
       end
     end
   end

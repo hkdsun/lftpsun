@@ -3,10 +3,10 @@ debug_mode: false
 lftp:
   parallel_factor: 5
 
-log_dir: '/var/log/lftpsun'
+lftp_log_dir: '/var/log/lftpsun'
 
 client:
-  download_dir: '/Users/hkheradmand/Downloads/sms'
+  download_dir: '/Users/hormoz/Downloads/sms'
 
 default_clients:
   - name: 'dev'

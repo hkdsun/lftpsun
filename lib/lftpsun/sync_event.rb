@@ -1,21 +1,30 @@
 module Lftpsun
   class SyncEvent
-    def initialize(params = {})
-      @params = params.merge({
+    def initialize(name, src_path, label, host)
+      @params = {
+        name: name,
+        src_path: src_path,
+        label: label,
+        host: host,
+      }
+      @params.merge!({
         queued_at: Time.now.utc,
       })
     end
 
     def src_path
-      @params['path']
+      @params[:src_path]
     end
 
     def dest_path
-      "#{Lftpsun.download_dir}/#{@params['label']}/"
+      dir = "#{Lftpsun.download_dir}/"
+      dir += "#{@params[:label]}/" if @params[:label]
+      dir += "#{@params[:name]}/" if @params[:name]
+      dir
     end
 
     def host
-      @params['host']
+      @params[:host]
     end
 
     def start(time = Time.now.utc)

@@ -1,4 +1,3 @@
-require 'lftpsun/util'
 require 'eventmachine'
 
 module RackServer

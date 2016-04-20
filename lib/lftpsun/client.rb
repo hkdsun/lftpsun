@@ -2,7 +2,7 @@ require 'faraday'
 
 module Lftpsun
   class Client
-    attr_accessor :name, :url, :port
+    attr_accessor :name, :url
 
     class << self
       def deserialize(hash)
@@ -12,8 +12,7 @@ module Lftpsun
 
     def initialize(name, callback_url, callback_port)
       @name = name
-      @url = callback_url
-      @port = callback_port
+      @url = "#{callback_url}:#{callback_port}"
     end
 
     def send_notification(params = {})
@@ -35,14 +34,14 @@ module Lftpsun
     def http_post(hash)
       conn = Faraday.new(url: @url) do |faraday|
         faraday.request  :url_encoded
-        faraday.response :logger if DEBUG
+        faraday.response :logger if Lftpsun.debug?
         faraday.adapter  Faraday.default_adapter
       end
 
       conn.post do |req|
         req.options.timeout = 5
         req.options.open_timeout = 2
-        req.url CLIENT_ENDPOINT
+        req.url '/notify'
         req.headers['Content-Type'] = 'application/json'
         req.body = JSON.generate(hash)
       end

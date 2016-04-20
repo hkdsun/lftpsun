@@ -1,4 +1,5 @@
 require 'pty'
+require 'fileutils'
 
 module Lftpsun
   class LFTP
@@ -12,6 +13,7 @@ module Lftpsun
       clear_src_dir: false,
       log: true
     )
+      raise ArgumentError, "Insufficient arguments to build an lftp command" unless host && source && destination
 
       @host = host
       @source = source
@@ -21,13 +23,16 @@ module Lftpsun
       @logging = log
       @debug = Lftpsun.debug?
       @command = build_lftp_command
-
-      raise ArgumentError, "Insufficient arguments to build an lftp command" unless @host && @source && @destination
     end
 
-    def logging?
-      @logging
+    def run
+      maybe_create_destination
+      spawn_command
+    rescue PTY::ChildExited => e
+      raise LFTPSync::SyncError, "lftp process exited unexpectedly"
     end
+
+    private
 
     def build_lftp_command
       stdin = <<-EOF
@@ -37,6 +42,8 @@ module Lftpsun
         set ftp:ssl-force true
         set ftp:ssl-protect-data true
         set ssl:verify-certificate off
+        set net:max-retries 1
+        set dns:max-retries 1
         set mirror:use-pget-n #{parallelization_factor}
         mirror #{"--Remove-source-files" if @remove_src} -c -P#{parallelization_factor} #{"--log=#{log_dir}/syncmyshit_lftp.log" if logging?} #{@source.shellescape} #{@destination.shellescape}
         quit
@@ -63,8 +70,6 @@ module Lftpsun
     end
 
     def spawn_command
-      require 'byebug'
-      byebug
       cmd, doc = build_lftp_command
       PTY.spawn(cmd) do |reader, writer, pid|
         begin
@@ -86,18 +91,24 @@ module Lftpsun
       end
     end
 
-    def run
-      spawn_command
-    rescue PTY::ChildExited => e
-      raise LFTPSync::SyncError, "lftp process exited unexpectedly"
-    end
-
     def parallelization_factor
       Lftpsun.config['lftp']['parallel_factor']
     end
 
     def log_dir
-      Lftpsun.config['log_dir']
+      Lftpsun.config['lftp_log_dir']
+    end
+
+    def logging?
+      @logging
+    end
+
+    def maybe_create_destination
+      dirname = File.expand_path(@destination)
+      puts "[LFTP-SYNC] creating directory #{dirname}"
+      unless File.directory?(dirname)
+        FileUtils.mkdir_p(dirname)
+      end
     end
   end
 end
