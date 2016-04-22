@@ -51,6 +51,7 @@ module Lftpsun
         set ssl:verify-certificate off
         set net:max-retries 1
         set dns:max-retries 1
+        #{"set ssl:key-file #{Lftpsun.config['sftp_key']}" if Lftpsun.config['sftp_key']}
         set mirror:use-pget-n #{parallelization_factor}
         mirror #{"--Remove-source-files" if @remove_src} -c -P#{parallelization_factor} #{"--log=#{LFTP.log_dir}/syncmyshit_lftp.log" if logging?} #{@source.shellescape} #{@destination.shellescape}
         quit

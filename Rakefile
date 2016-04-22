@@ -14,10 +14,10 @@ end
 
 task :server => :environment do
   require "lftpsun/api/server"
-  RackServer.run(app: Lftpsun::Api::ServerApp.new, port: 4793)
+  RackServer.run(app: Lftpsun::Api::ServerApp.new, port: 4568)
 end
 
 task :client => :environment do
   require "lftpsun/api/client"
-  RackServer.run(app: Lftpsun::Api::ClientApp.new, port: 4794)
+  RackServer.run(app: Lftpsun::Api::ClientApp.new, port: 4567)
 end

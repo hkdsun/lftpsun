@@ -5,6 +5,8 @@ lftp:
 
 lftp_log_dir: '/var/log/lftpsun'
 
+sftp_key: '/example/id'
+
 client:
   download_dir: '/path/to/downloads'
 
