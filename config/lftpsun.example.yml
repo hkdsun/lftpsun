@@ -1,9 +1,15 @@
+debug_mode: false
+
 lftp:
   parallel_factor: 5
 
 lftp_log_dir: '/var/log/lftpsun'
 
+client:
+  download_dir: '/path/to/downloads'
+
 default_clients:
   - name: 'dev'
     callback_url: 'http://localhost:4568'
     callback_port: '80'
+
